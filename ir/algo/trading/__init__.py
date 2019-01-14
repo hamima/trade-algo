@@ -1,5 +1,6 @@
 import datetime
 import sys
+import pika
 import json
 import backtrader as bt
 import backtrader.indicators as btind
@@ -28,12 +29,42 @@ class MyStrategy(bt.Strategy):
         ''' Logging function fot this strategy'''
         dt = dt or self.datas[0].datetime.date(0)
         print('%s, %s' % (dt.isoformat(), txt))
+    def _channel_init(self):
+        credentials = pika.PlainCredentials(rabbitUserName, rabbitPassword)
+        connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitHost, rabbitPort, '/', credentials))
+        self.channel = connection.channel()
+
+    # def _create_order(self, req_isin, budget):
+
+        # sendOrder(req_isin = 'IRO1SIPA0001', 1381, 1, 'BUY')
+        # cancelOrder(54321)
+
+        # un-comment to receive Market Data
+        # self.channel.basic_consume(marketDataCallBack, queue=marketDataQueueName, no_ack=True)
+
+        # Setup Order Changes Listener
+        # self.channel.basic_consume(orderNoticeCallBack, queue=orderResponseQueueName, no_ack=True)
+
+        # Start Listening to all data
+        self.channel.start_consuming()
+
+    def cancelOrder(self, orderId):
+        self.channel.basic_publish(exchange='orderbox', routing_key='CANCEL', body=json.dumps({"orderId": orderId, "clientId": clientId}))
+
+
+    def marketDataCallBack(self, ch, method, properties, body):
+        print(" [x] Market Data Received %r" % json.loads(body))
+
+
+    def orderNoticeCallBack(self, ch, method, properties, body):
+        print(" [x] Order Notice Received %r" % body)
+
 
     def __init__(self):
         # sma = btind.SimpleMovingAverage(self.datas[0], period=self.params.period)
         # sma = btind.SimpleMovinAverage(self.data, period=20)
         self.sma = sma = btind.SMA(self.data, period=20)
-        self.rsi = rsi = btind.rsi(self.data, period=21)
+        self.rsi = rsi = btind.RSI_SMA(self.data.close, period=21)
 
         close_over_sma = self.data.close > sma
         sma_dist_to_high = self.data.high - sma
@@ -45,6 +76,7 @@ class MyStrategy(bt.Strategy):
         # function has to be provided by the platform to emulate it
 
         sell_sig = bt.And(close_over_sma, sma_dist_small)
+        self._channel_init()
 
     def next(self):
 
@@ -81,13 +113,33 @@ class MyStrategy(bt.Strategy):
     def buy(self, isin):
         budget = CurrentBudget.objects()
         budget.availableBudget = budget.availableBudget * .02
-        self._create_order(isin, budget.availableBudget * .02)
 
-    def _create_order(self, req_isin, budget):
+        self._create_order(req_isin=isin, budget=budget.availableBudget * .02)
+
+    def _create_order(self, req_isin, budget, price, quantity, side ):
         order = Order(budget=budget, isin=req_isin, situation=0)
         order.save()
+        self.channel.basic_publish(exchange='orderbox', routing_key='ORDER', body=json.dumps(
+        {
+            "userId": user1Secret,
+            "clientId": clientId,
+            "isin": req_isin,
+            "broker": "PASARGAD",
+            "iceberg": 0,
+            "price": price,
+            "quantity": quantity,
+            "side": side,
+            "validity": 'DAY',
+            "tag": 'TAG_TAG',
+            "senderOrderId": 101010
+        })
+                          )
+
         return order
 
+    def _get_price(self, isin):
+
+        return 0
 
 def _read_data(datapath):
     dateformat = '%Y%m%d'

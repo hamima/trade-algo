@@ -2,12 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="bfbc4c79-ea98-474a-8aee-5c7dcb2fa50b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/ir/algo/trading/current_situation.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ir/algo/trading/sample.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ir/algo/trading/trader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ir/algo/file_read/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/ir/algo/file_read/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ir/algo/trading/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/ir/algo/trading/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ir/algo/trading/read_files.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ir/algo/trading/current_situation.py" beforeDir="false" afterPath="$PROJECT_DIR$/ir/algo/trading/current_situation.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -56,8 +53,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ir/algo/trading/current_situation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="238">
-              <caret line="14" column="19" selection-start-line="14" selection-start-column="4" selection-end-line="14" selection-end-column="19" />
+            <state relative-caret-position="391">
+              <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -68,8 +65,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ir/algo/trading/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="272">
-              <caret line="16" column="19" lean-forward="true" selection-start-line="16" selection-start-column="19" selection-end-line="16" selection-end-column="19" />
+            <state relative-caret-position="-289">
+              <caret line="16" column="18" selection-start-line="16" selection-start-column="18" selection-end-line="16" selection-end-column="18" />
               <folding>
                 <element signature="e#0#15#0" expanded="true" />
               </folding>
@@ -80,8 +77,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ir/algo/trading/sample.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
-              <caret line="13" lean-forward="true" selection-start-line="4" selection-end-line="13" />
+            <state relative-caret-position="255">
+              <caret line="15" column="33" selection-start-line="15" selection-start-column="33" selection-end-line="15" selection-end-column="33" />
               <folding>
                 <element signature="e#22#33#0" expanded="true" />
               </folding>
@@ -141,8 +138,8 @@
         <option value="$PROJECT_DIR$/ir/algo/trading/current_budget.py" />
         <option value="$PROJECT_DIR$/ir/algo/trading/current_stock.py" />
         <option value="$PROJECT_DIR$/ir/algo/trading/trader.py" />
-        <option value="$PROJECT_DIR$/ir/algo/trading/current_situation.py" />
         <option value="$PROJECT_DIR$/ir/algo/trading/sample.py" />
+        <option value="$PROJECT_DIR$/ir/algo/trading/current_situation.py" />
         <option value="$PROJECT_DIR$/ir/algo/trading/__init__.py" />
       </list>
     </option>
@@ -175,26 +172,6 @@
               <item name="trader" type="b2602c69:ProjectViewProjectNode" />
               <item name="trader" type="462c0819:PsiDirectoryNode" />
               <item name="ir" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="trader" type="b2602c69:ProjectViewProjectNode" />
-              <item name="trader" type="462c0819:PsiDirectoryNode" />
-              <item name="ir" type="462c0819:PsiDirectoryNode" />
-              <item name="algo" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="trader" type="b2602c69:ProjectViewProjectNode" />
-              <item name="trader" type="462c0819:PsiDirectoryNode" />
-              <item name="ir" type="462c0819:PsiDirectoryNode" />
-              <item name="algo" type="462c0819:PsiDirectoryNode" />
-              <item name="file_read" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="trader" type="b2602c69:ProjectViewProjectNode" />
-              <item name="trader" type="462c0819:PsiDirectoryNode" />
-              <item name="ir" type="462c0819:PsiDirectoryNode" />
-              <item name="algo" type="462c0819:PsiDirectoryNode" />
-              <item name="trading" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -384,14 +361,19 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ir/algo/trading/current_situation.py">
+    <entry file="file://$PROJECT_DIR$/ir/algo/trading/sample.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" column="19" selection-start-line="14" selection-start-column="4" selection-end-line="14" selection-end-column="19" />
+        <state relative-caret-position="255">
+          <caret line="15" column="33" selection-start-line="15" selection-start-column="33" selection-end-line="15" selection-end-column="33" />
           <folding>
-            <element signature="e#0#25#0" expanded="true" />
+            <element signature="e#22#33#0" expanded="true" />
           </folding>
         </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/backtrader/indicators/rsi.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-459" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ir/algo/file_read/__init__.py">
@@ -404,20 +386,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ir/algo/trading/sample.py">
+    <entry file="file://$PROJECT_DIR$/ir/algo/trading/current_situation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="13" lean-forward="true" selection-start-line="4" selection-end-line="13" />
+        <state relative-caret-position="391">
+          <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
           <folding>
-            <element signature="e#22#33#0" expanded="true" />
+            <element signature="e#0#25#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ir/algo/trading/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="16" column="19" lean-forward="true" selection-start-line="16" selection-start-column="19" selection-end-line="16" selection-end-column="19" />
+        <state relative-caret-position="-289">
+          <caret line="16" column="18" selection-start-line="16" selection-start-column="18" selection-end-line="16" selection-end-column="18" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
           </folding>
