@@ -2,14 +2,16 @@
 import pika
 import json
 
-marketDataQueueName = 'algo-usr-?-rlc'
-orderResponseQueueName = 'algo-usr-?-sle'
-rabbitHost = '185.37.53.198'
+marketDataQueueName = 'algo-usr-rastak-rlc'
+orderResponseQueueName = 'algo-usr-rastak-sle'
+rabbitHost = '185.37.53.204'
 rabbitPort = 30672
-rabbitUserName = ''
-rabbitPassword = ''
-clientId = ''
-user1Secret = ''
+rabbitUserName = 'algo-usr-rastak'
+rabbitPassword = 'UVPP1R41X1I77MIJDPFO'
+clientId = 'rastak'
+clientSecret = 'LtywARien5jxwGUkgRSimFZ33uaGuQ'
+user1Secret = 'pgun4Jn2Bgz43jd6WCeT9NRyGqa78Q'
+isin = 'IRO1HFRS0001'
 
 
 # side possible values : BUY | SELL
@@ -50,7 +52,7 @@ credentials = pika.PlainCredentials(rabbitUserName, rabbitPassword)
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitHost, rabbitPort, '/', credentials))
 channel = connection.channel()
 
-sendOrder('IRO1SIPA0001', 1381, 1, 'BUY')
+sendOrder(isin, 150, 15680, 'BUY')
 # cancelOrder(54321)
 
 # un-comment to receive Market Data
