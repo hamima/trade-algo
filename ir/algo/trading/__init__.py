@@ -5,10 +5,10 @@ import json
 import backtrader as bt
 import backtrader.indicators as btind
 import backtrader.feeds as btfeeds
+from os import listdir
+from os.path import isfile, join
 
 from ir.algo.trading.current_situation import CurrentStock, CurrentBudget, Order
-
-
 
 marketDataQueueName = 'algo-usr-?-rlc'
 orderResponseQueueName = 'algo-usr-?-sle'
@@ -20,45 +20,48 @@ clientId = ''
 user1Secret = ''
 
 
-
 class MyStrategy(bt.Strategy):
     params = dict(period=20)
     current_budget = -sys.maxint - 1
+    current_orders = {}
+    trackedIsins = ['', '']
 
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
         dt = dt or self.datas[0].datetime.date(0)
         print('%s, %s' % (dt.isoformat(), txt))
+
+    def _main_init(self):
+        self._channel_init()
+
     def _channel_init(self):
         credentials = pika.PlainCredentials(rabbitUserName, rabbitPassword)
         connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitHost, rabbitPort, '/', credentials))
         self.channel = connection.channel()
-
-    # def _create_order(self, req_isin, budget):
-
-        # sendOrder(req_isin = 'IRO1SIPA0001', 1381, 1, 'BUY')
-        # cancelOrder(54321)
-
-        # un-comment to receive Market Data
-        # self.channel.basic_consume(marketDataCallBack, queue=marketDataQueueName, no_ack=True)
-
-        # Setup Order Changes Listener
-        # self.channel.basic_consume(orderNoticeCallBack, queue=orderResponseQueueName, no_ack=True)
-
-        # Start Listening to all data
+        self.channel.basic_consume(self.marketDataCallBack, queue=marketDataQueueName, no_ack=True)
+        self.channel.basic_consume(self.orderNoticeCallBack, queue=orderResponseQueueName, no_ack=True)
         self.channel.start_consuming()
 
     def cancelOrder(self, orderId):
-        self.channel.basic_publish(exchange='orderbox', routing_key='CANCEL', body=json.dumps({"orderId": orderId, "clientId": clientId}))
-
+        self.channel.basic_publish(exchange='orderbox', routing_key='CANCEL',
+                                   body=json.dumps({"orderId": orderId, "clientId": clientId}))
 
     def marketDataCallBack(self, ch, method, properties, body):
         print(" [x] Market Data Received %r" % json.loads(body))
+        jsonStr = json.loads(body)
+        jsonStr
 
 
     def orderNoticeCallBack(self, ch, method, properties, body):
         print(" [x] Order Notice Received %r" % body)
-
+        if body.state == 'EXECUTED':
+            current_situation[body.isin] = body.amount
+            currentStock = CurrentStock(isin=body.isin, maxValue=body.price, valume=body.vol)
+            currentStock.save()
+            del self.current_orders[body.isin]
+        else: #body.state == 'FAILURE':
+            del self.current_orders[body.isin]
+            self._order_failure_handler(body.isin, body.value)
 
     def __init__(self):
         # sma = btind.SimpleMovingAverage(self.datas[0], period=self.params.period)
@@ -66,16 +69,16 @@ class MyStrategy(bt.Strategy):
         self.sma = sma = btind.SMA(self.data, period=20)
         self.rsi = rsi = btind.RSI_SMA(self.data.close, period=21)
 
-        close_over_sma = self.data.close > sma
-        sma_dist_to_high = self.data.high - sma
+        # close_over_sma = self.data.close > sma
+        # sma_dist_to_high = self.data.high - sma
 
-        sma_dist_small = sma_dist_to_high < 3.5
+        # sma_dist_small = sma_dist_to_high < 3.5
 
         # Unfortunately "and" cannot be overridden in Python being
         # a language construct and not an operator and thus a
         # function has to be provided by the platform to emulate it
 
-        sell_sig = bt.And(close_over_sma, sma_dist_small)
+        # sell_sig = bt.And(close_over_sma, sma_dist_small)
         self._channel_init()
 
     def next(self):
@@ -98,6 +101,9 @@ class MyStrategy(bt.Strategy):
         if self.sma_dist_to_high > 5.0:
             print('distance from sma to hig is greater than 5.0')
 
+    def _list_stocks(self, path):
+        self.files = [f for f in listdir(path) if isfile(join(path, f))]
+
     @staticmethod
     def _trailing_stop_checker(isin, value):
         stock = CurrentStock.objects(isin=isin)
@@ -110,55 +116,66 @@ class MyStrategy(bt.Strategy):
                 return True
         return False
 
+    def _order_failure_handler(self, isin, value):
+        budget = CurrentBudget.objects()
+        budget.availableBudget += value
+        budget.save()
+        order = Order.find(isin=isin)
+        order.situation = 1
+        order.save()
+
     def buy(self, isin):
         budget = CurrentBudget.objects()
-        budget.availableBudget = budget.availableBudget * .02
+        amount = budget.availableBudget * .02
+        budget.availableBudget -= amount
+        budget.save()
+        self._create_order(req_isin=isin, budget=amount)
 
-        self._create_order(req_isin=isin, budget=budget.availableBudget * .02)
-
-    def _create_order(self, req_isin, budget, price, quantity, side ):
+    def _create_order(self, req_isin, budget, price, quantity, side):
         order = Order(budget=budget, isin=req_isin, situation=0)
         order.save()
+        self.current_orders[req_isin] = quantity
         self.channel.basic_publish(exchange='orderbox', routing_key='ORDER', body=json.dumps(
-        {
-            "userId": user1Secret,
-            "clientId": clientId,
-            "isin": req_isin,
-            "broker": "PASARGAD",
-            "iceberg": 0,
-            "price": price,
-            "quantity": quantity,
-            "side": side,
-            "validity": 'DAY',
-            "tag": 'TAG_TAG',
-            "senderOrderId": 101010
-        })
-                          )
-
+            {
+                "userId": user1Secret,
+                "clientId": clientId,
+                "isin": req_isin,
+                "broker": "PASARGAD",
+                "iceberg": 0,
+                "price": price,
+                "quantity": quantity,
+                "side": side,
+                "validity": 'DAY',
+                "tag": 'TAG_TAG',
+                "senderOrderId": 101010
+            })
+                                   )
         return order
 
     def _get_price(self, isin):
-
         return 0
 
-def _read_data(datapath):
-    dateformat = '%Y%m%d'
+    def _read_data(datapath):
+        dateformat = '%Y%m%d'
+        data = bt.feeds.GenericCSVData(
+            dataname=datapath,
+            fromdate=datetime.datetime(2009, 2, 21),
+            todate=datetime.datetime(2011, 5, 14),
+            nullvalue=0.0,
+            dtformat=dateformat,
+            datetime=1,
+            high=3,
+            low=4,
+            open=2,
+            close=5,
+            volume=6,
+            openinterest=-1
+        )
+        return data
 
-    data = bt.feeds.GenericCSVData(
-        dataname=datapath,
-        fromdate=datetime.datetime(2009, 2, 21),
-        todate=datetime.datetime(2011, 5, 14),
-        nullvalue=0.0,
-        dtformat=dateformat,
-        datetime=1,
-        high=3,
-        low=4,
-        open=2,
-        close=5,
-        volume=6,
-        openinterest=-1
-    )
-    return data
+    def track_the_trace(self, isin, ):
+
+        return
 
 
 cerebro = bt.Cerebro()
