@@ -4,7 +4,7 @@ import json
 
 marketDataQueueName = 'algo-usr-rastak-rlc'
 orderResponseQueueName = 'algo-usr-rastak-sle'
-rabbitHost = '185.37.53.204'
+rabbitHost = '185.37.53.'
 rabbitPort = 30672
 rabbitUserName = 'algo-usr-rastak'
 rabbitPassword = 'UVPP1R41X1I77MIJDPFO'
