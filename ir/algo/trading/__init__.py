@@ -130,7 +130,12 @@ class MyStrategy(bt.Strategy):
                     candidate.volume = True
                     candidate.save()
                     self.check_buying_condition(candidate)
-                # check
+                # check ATR
+                if max(jsonObject.high - candidate.atrClose,
+                       jsonObject.high - jsonObject.low) >= 1.5 * candidate.atrAvg:
+                    candidate.atr = True
+                    candidate.save()
+                    self.check_buying_condition(candidate)
         if isin in self.portfolio:
             stocks = CurrentStock.objects(isin=isin)
             if len(stocks) > 0:
@@ -196,7 +201,6 @@ class MyStrategy(bt.Strategy):
             del self.current_orders[body.orderId]
             self._order_failure_handler(body.isin, body.value)
             Order.delete(orderId=body.orderId)
-            
 
     def __init__(self):
         # sma = btind.SimpleMovingAverage(self.datas[0], period=self.params.period)
