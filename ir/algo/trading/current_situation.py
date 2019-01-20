@@ -19,6 +19,7 @@ class CurrentBudget(DynamicDocument):
 class Order(DynamicDocument):
     budget = LongField()
     isin = StringField()
+    side = StringFiled()
     situation = IntField(min_value=0, max_value=2)
     meta = {'collection': 'Order'}
 

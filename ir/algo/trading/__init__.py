@@ -47,10 +47,28 @@ class MyStrategy(bt.Strategy):
                                    body=json.dumps({"orderId": orderId, "clientId": clientId}))
 
     def marketDataCallBack(self, ch, method, properties, body):
-        print(" [x] Market Data Received %r" % json.loads(body))
-        jsonStr = json.loads(body)
-        jsonStr
+        try:
+           # print(" [x] Market Data Received %r" % json.loads(body))
+            jsonStr = json.loads(body)
+            if 'instrumentId' in jsonStr:
+                self._trade_event_process(jsonStr)
+            elif 'lastTrade' in jsonStr:
+                self.stock_watch_event(jsonStr)
+            elif 'items' in jsonStr:
+                self.bid_ask_event(jsonStr)
+            elif 'individualBuyCount' in jsonStr:
+                self.client_info_event(jsonStr)
+        except ValueError as error:
+            print(error)
 
+    def _trade_event_process(self, jsonObject):
+        return
+    def stock_watch_event(self, jsonObject):
+        return
+    def client_info_event(self, jsonObject):
+        return
+    def bid_ask_event(self, jsonObject):
+        return
 
     def orderNoticeCallBack(self, ch, method, properties, body):
         print(" [x] Order Notice Received %r" % body)
@@ -129,10 +147,10 @@ class MyStrategy(bt.Strategy):
         amount = budget.availableBudget * .02
         budget.availableBudget -= amount
         budget.save()
-        self._create_order(req_isin=isin, budget=amount)
+        self._create_order(req_isin=isin, budget=amount, side="BUY")
 
     def _create_order(self, req_isin, budget, price, quantity, side):
-        order = Order(budget=budget, isin=req_isin, situation=0)
+        order = Order(budget=budget, isin=req_isin, situation=0, side = side)
         order.save()
         self.current_orders[req_isin] = quantity
         self.channel.basic_publish(exchange='orderbox', routing_key='ORDER', body=json.dumps(
