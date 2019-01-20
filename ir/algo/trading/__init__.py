@@ -100,7 +100,14 @@ class MyStrategy():
         self.mongo_init()
         self._store_candidates()
         self.fill_portfolio()
+        self.init_budget()
         self._channel_init()
+
+    def init_budget(self):
+        budget = CurrentBudget.objects()
+        if len(budget) == 0:
+            budget = CurrentBudget(availableBudget=10000000)
+            budget.save()
 
     def mongo_init(self):
         connect("trading_db")
