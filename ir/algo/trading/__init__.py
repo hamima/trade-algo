@@ -102,24 +102,25 @@ class MyStrategy(bt.Strategy):
             print(error)
 
     def _trade_event_process(self, jsonObject):
-        isin = jsonObject.isin
-        if isin not in self.portfolio:
-            return
-        if isin in self.portfolio:
-            stocks = CurrentStock.objects(isin = isin)
-            if len(stocks) > 0:
-                stock = stocks[0]
-                if stock.maxValue < jsonObject.price:
-                    stock.maxValue = jsonObject.price
-                    stock.save()
-                if jsonObject.price < stock.maxValue * .96:
-                    sell()
+        # isin = jsonObject.isin
+        # if isin not in self.portfolio:
+        #     return
+        # if isin in self.portfolio:
+        #     stocks = CurrentStock.objects(isin=isin)
+        #     if len(stocks) > 0:
+        #         stock = stocks[0]
+        #         if stock.maxValue < jsonObject.price:
+        #             stock.maxValue = jsonObject.price
+        #             stock.save()
+        #         if jsonObject.price < stock.maxValue * .96:
+        #             sell()
         return
 
     def stock_watch_event(self, jsonObject):
         isin = jsonObject.isin
         if isin not in self.candidates:
-            return
+            if isin not in self.portfolio:
+                return
         if isin in self.candidates:
             candidates = Candidate.objects(isin=isin)
             if len(candidates) > 0:
@@ -130,7 +131,16 @@ class MyStrategy(bt.Strategy):
                     candidate.save()
                     self.check_buying_condition(candidate)
                 # check
-            return
+        if isin in self.portfolio:
+            stocks = CurrentStock.objects(isin=isin)
+            if len(stocks) > 0:
+                stock = stocks[0]
+                if stock.maxValue < jsonObject.close:
+                    stock.maxValue = jsonObject.close
+                    stock.save()
+                if jsonObject.close < stock.maxValue * .96:
+                    sell()
+
         return
 
     def client_info_event(self, jsonObject):
@@ -172,17 +182,21 @@ class MyStrategy(bt.Strategy):
         if len(candidates) > 0:
             candidate = candidates[0]
 
-    def orderNoticeCallBack(self, ch, method, properties, body):
-        print(" [x] Order Notice Received %r" % body)
+    def orderNoticeCallBack(self, ch, method, properties, json):
+        print(" [x] Order Notice Received %r" % json)
+        body = json.loads(json)
         if body.state == 'EXECUTED':
             current_situation[body.isin] = body.amount
             currentStock = CurrentStock(isin=body.isin, maxValue=body.price, valume=body.vol)
             currentStock.save()
             self.candidates.remove(body.isin)
-            del self.current_orders[body.isin]
-        else:  # body.state == 'FAILURE':
-            del self.current_orders[body.isin]
+            del self.current_orders[body.orderId]
+            Order.delete(orderId=body.orderId)
+        elif body.state == 'ERROR':
+            del self.current_orders[body.orderId]
             self._order_failure_handler(body.isin, body.value)
+            Order.delete(orderId=body.orderId)
+            
 
     def __init__(self):
         # sma = btind.SimpleMovingAverage(self.datas[0], period=self.params.period)
@@ -257,11 +271,11 @@ class MyStrategy(bt.Strategy):
         # amount = self.lot_amount * lots
         # budget.availableBudget -= amount
         # budget.save()
-        self._create_order(req_isin=isin, side="SELL")
+        self._create_order(req_isin=isin, price=price, side="SELL")
 
     def _create_order(self, req_isin, budget, price, quantity, side):
         orderId = randint(100000, 999999)
-        order = Order(budget=budget, isin=req_isin, situation=0, side=side, orderId = orderId)
+        order = Order(budget=budget, isin=req_isin, situation=0, side=side, orderId=orderId)
         order.save()
         self.current_orders[req_isin] = quantity
         self.channel.basic_publish(exchange='orderbox', routing_key='ORDER', body=json.dumps(
