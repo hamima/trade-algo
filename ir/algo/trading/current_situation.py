@@ -23,22 +23,3 @@ class Order(DynamicDocument):
     meta = {'collection': 'Order'}
 
 
-class StockWatchEvent:
-    isin = None
-    last = None
-    closing = None
-    first = None
-    high = None
-    low = None
-    min = None
-    max = None
-    tardeValue = None
-    tradeVolume = None
-    tradesCount = None
-    referencePrice = None
-    state = None
-    event = None
-    upRangeCount = None
-    downRangeCount = None
-    lastTrade = None
-
