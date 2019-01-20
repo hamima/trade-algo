@@ -2,6 +2,7 @@ import datetime
 import sys
 from builtins import set
 from random import randint
+from mongoengine import *
 
 import pika
 import json
@@ -25,11 +26,10 @@ user1Secret = 'pgun4Jn2Bgz43jd6WCeT9NRyGqa78Q'
 
 
 class MyStrategy():
-    params = dict(period=20)
-    current_budget = -sys.maxint - 1
-    current_orders = {}
-    lot_amount = 6000000
-    trackedIsins = ['', '']
+    #params = dict(period=20)
+    #current_budget = -sys.maxint - 1
+    lot_amount = 3000000
+    #trackedIsins = ['', '']
     rsiIsins = {
         "IRO1ATIR0001":{"close":4513,"maxVol":4400851,"atr":195},
         "IRO3OSHZ0001":{"close":1367,"maxVol":3193025,"atr":55},
@@ -74,11 +74,11 @@ class MyStrategy():
         print('%s, %s' % (dt.isoformat(), txt))
 
     def _store_candidates(self):
-        for (isin, v) in self.rsiIsins:
+        for isin, v in self.rsiIsins.items():
             self.rsiCandidateIsins.append(isin)
-            candidate = Candidate(isin=isin, rsi=True, atrAvg=v.atr, atrClose=v.close, volumeMax=v.maxVol)
+            candidate = Candidate(isin=isin, rsi=True, atrAvg=v["atr"], atrClose=v["close"], volumeMax=v["maxVol"])
             candidate.save()
-        for (isin,v) in self.crossoverIsins:
+        for isin,v in self.crossoverIsins.items():
             self.macDCandidateIsins.append(isin)
             candidates = Candidate.objects(isin=isin)
             if len(candidates) > 0:
@@ -86,7 +86,7 @@ class MyStrategy():
                 candidate.macd = True
                 candidate.save()
             else:
-                candidate = Candidate(isin=isin, macd=True, atrAvg=v.atr, atrClose=v.close, volumeMax=v.maxVol)
+                candidate = Candidate(isin=isin, rsi=True, atrAvg=v["atr"], atrClose=v["close"], volumeMax=v["maxVol"])
                 candidate.save()
         self.candidates.update(self.rsiCandidateIsins)
         self.candidates.update(self.macDCandidateIsins)
@@ -97,9 +97,13 @@ class MyStrategy():
             self.portfolio.append(stock.isin, stock)
 
     def _main_init(self):
+        self.mongo_init()
         self._store_candidates()
         self.fill_portfolio()
         self._channel_init()
+
+    def mongo_init(self):
+        connect("trading_db")
 
     def _channel_init(self):
         credentials = pika.PlainCredentials(rabbitUserName, rabbitPassword)
@@ -161,7 +165,7 @@ class MyStrategy():
                     self.sell(isin)
 
     def sell(self, isin):
-        if self.isForbidden is True:
+        if self.isForbidden:
             return
         stocks = CurrentStock.objects(isin=isin)
         if len(stocks) > 0:
@@ -185,7 +189,7 @@ class MyStrategy():
                 self.check_buying_condition(candidate)
 
     def check_buying_condition(self, candidate):
-        if self.isForbidden is True:
+        if self.isForbidden:
             return
         lots = 0
         if candidate.volume:
@@ -295,6 +299,7 @@ class MyStrategy():
                                    )
         return order
 
+strategy = MyStrategy()
 
 '''
     def next(self):
