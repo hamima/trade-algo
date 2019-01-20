@@ -8,6 +8,7 @@ class CurrentStock(DynamicDocument):
     maxValue = IntField()
     boughtValue = IntField()
     volume = LongField()
+    sellPrice = IntField()
     meta = {'collection': 'CurrentStock'}
 
 
@@ -34,4 +35,5 @@ class Candidate(DynamicDocument):
     volumeMax = LongField()
     volume = BooleanField()
     indivCheck = BooleanField()
+    buyPrice = IntField()
     meta = {'collection': 'Candidate'}

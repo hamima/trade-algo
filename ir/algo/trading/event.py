@@ -34,7 +34,7 @@ class BidAskEvent:
     isin= None
     items=[]
 
-class BidAsk:
+class BidAskEvent:
     bidNumber= None
     bidPrice= None
     bidQuanltity= None
