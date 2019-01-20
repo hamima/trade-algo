@@ -19,8 +19,19 @@ class CurrentBudget(DynamicDocument):
 class Order(DynamicDocument):
     budget = LongField()
     isin = StringField()
-    side = StringFiled()
+    side = StringField()
+    orderId = StringField()
     situation = IntField(min_value=0, max_value=2)
     meta = {'collection': 'Order'}
 
-
+class Candidate(DynamicDocument):
+    isin = StringField()
+    rsi = BooleanField()
+    macd = BooleanField()
+    atr = BooleanField()
+    atrClose = IntField()
+    atrAvg = IntField()
+    volumeMax = LongField()
+    volume = BooleanField()
+    indivCheck = BooleanField()
+    meta = {'collection': 'Candidate'}

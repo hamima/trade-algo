@@ -20,40 +20,40 @@ class StockWatchEvent:
     lastTrade = None
 
 class TradeEvent:
-    quantity: None
-    price: None
-    instrumentId: None
-    createdAt: None
-    sellerId: None
-    buyerId: None
-    high: None
-    low: None
-    number: None
+    quantity= None
+    price= None
+    instrumentId= None
+    createdAt= None
+    sellerId= None
+    buyerId= None
+    high= None
+    low= None
+    number= None
 
 class BidAskEvent:
-    isin: None
-    items:[]
+    isin= None
+    items=[]
 
 class BidAsk:
-    bidNumber: None
-    bidPrice: None
-    bidQuanltity: None
-    askNumber: None
-    askPrice: None
-    askQuantity: None
+    bidNumber= None
+    bidPrice= None
+    bidQuanltity= None
+    askNumber= None
+    askPrice= None
+    askQuantity= None
 
 class ClientInfoEvent:
-    individualBuyCount: None
-    individualSellCount: None
-    individualBuyVolume: None
-    individualSellVolume: None
-    naturalBuyVolume: None
-    naturalSellVolume: None
-    naturalBuyCount: None
-    naturalSellCount: None
-    isin: None
-    dateTime: None
-    buyerDensityValue: None
-    sellerDensityValue: None
+    individualBuyCount= None
+    individualSellCount= None
+    individualBuyVolume= None
+    individualSellVolume= None
+    naturalBuyVolume= None
+    naturalSellVolume= None
+    naturalBuyCount= None
+    naturalSellCount= None
+    isin= None
+    dateTime= None
+    buyerDensityValue= None
+    sellerDensityValue= None
 
 

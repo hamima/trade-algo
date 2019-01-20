@@ -1,5 +1,8 @@
 import datetime
 import sys
+from builtins import set
+from random import randint
+
 import pika
 import json
 import backtrader as bt
@@ -8,30 +11,67 @@ import backtrader.feeds as btfeeds
 from os import listdir
 from os.path import isfile, join
 
-from ir.algo.trading.current_situation import CurrentStock, CurrentBudget, Order
+from ir.algo.trading.current_situation import CurrentStock, CurrentBudget, Order, Candidate
 
-marketDataQueueName = 'algo-usr-?-rlc'
-orderResponseQueueName = 'algo-usr-?-sle'
-rabbitHost = '185.37.53.198'
+marketDataQueueName = 'algo-usr-rastak-rlc'
+orderResponseQueueName = 'algo-usr-rastak-sle'
+rabbitHost = '185.37.53.'
 rabbitPort = 30672
-rabbitUserName = ''
-rabbitPassword = ''
-clientId = ''
-user1Secret = ''
+rabbitUserName = 'algo-usr-rastak'
+rabbitPassword = 'UVPP1R41X1I77MIJDPFO'
+clientId = 'rastak'
+clientSecret = 'LtywARien5jxwGUkgRSimFZ33uaGuQ'
+user1Secret = 'pgun4Jn2Bgz43jd6WCeT9NRyGqa78Q'
 
 
 class MyStrategy(bt.Strategy):
     params = dict(period=20)
     current_budget = -sys.maxint - 1
     current_orders = {}
+    lot_amount = 6000000
     trackedIsins = ['', '']
+    rsiCandidateIsins = ['IRO1HFRS0001']
+    macDCandidateIsins = ['IRO1HFRS0001']
+    atrCandidateIsins = [{'isin': 'IRO1HFRS0001', 'close': 1000, 'average': 20}]
+    candidates = set(rsiCandidateIsins + macDCandidateIsins)
+    portfolio = {}
 
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
         dt = dt or self.datas[0].datetime.date(0)
         print('%s, %s' % (dt.isoformat(), txt))
 
+    def _store_candidates(self):
+        for isin in self.rsiCandidateIsins:
+            candidate = Candidate(isin=isin, rsi=True)
+            candidate.save()
+        for isin in self.macDCandidateIsins:
+            candidates = Candidate.objects(isin=isin)
+            if len(candidates) > 0:
+                candidate = candidates[0]
+                candidate.macd = True
+                candidate.save()
+            else:
+                candidate = Candidate(isin=isin, macd=True)
+                candidate.save()
+
+        for cand in self.atrCandidateIsins:
+            candidates = Candidate.objects(isin=cand.isin)
+            if len(candidates) > 0:
+                candidate = candidates[0]
+                candidate.atr = True
+                candidate.atrAvg = cand.average
+                candidate.atrClose = cand.close
+                candidate.save()
+
+    def fill_portfolio(self):
+        stocks = CurrentStock.objects()
+        for stock in stocks:
+            self.portfolio.append(stock.isin, stock)
+
     def _main_init(self):
+        self._store_candidates()
+        self.fill_portfolio()
         self._channel_init()
 
     def _channel_init(self):
@@ -48,7 +88,7 @@ class MyStrategy(bt.Strategy):
 
     def marketDataCallBack(self, ch, method, properties, body):
         try:
-           # print(" [x] Market Data Received %r" % json.loads(body))
+            # print(" [x] Market Data Received %r" % json.loads(body))
             jsonStr = json.loads(body)
             if 'instrumentId' in jsonStr:
                 self._trade_event_process(jsonStr)
@@ -62,13 +102,75 @@ class MyStrategy(bt.Strategy):
             print(error)
 
     def _trade_event_process(self, jsonObject):
+        isin = jsonObject.isin
+        if isin not in self.portfolio:
+            return
+        if isin in self.portfolio:
+            stocks = CurrentStock.objects(isin = isin)
+            if len(stocks) > 0:
+                stock = stocks[0]
+                if stock.maxValue < jsonObject.price:
+                    stock.maxValue = jsonObject.price
+                    stock.save()
+                if jsonObject.price < stock.maxValue * .96:
+                    sell()
         return
+
     def stock_watch_event(self, jsonObject):
+        isin = jsonObject.isin
+        if isin not in self.candidates:
+            return
+        if isin in self.candidates:
+            candidates = Candidate.objects(isin=isin)
+            if len(candidates) > 0:
+                candidate = candidates[0]
+                # check bought volume of the stock
+                if jsonObject.tradeVolume >= (candidate.volumeMax * 1.2):
+                    candidate.volume = True
+                    candidate.save()
+                    self.check_buying_condition(candidate)
+                # check
+            return
         return
+
     def client_info_event(self, jsonObject):
+        isin = jsonObject.isin
+        if isin not in self.candidates:
+            return
+        individualSellerCount = jsonObject.individualSellCount
+        individualBuyerCount = jsonObject.individualBuyCount
+        individualBuyVolume = jsonObject.individualBuyVolume
+        if individualBuyerCount / individualSellerCount < .5 and individualBuyVolume > 100000:
+            candidates = Candidate.objects(isin=isin)
+            if len(candidates) > 0:
+                candidate = candidates[0]
+                candidate.indivCheck = True
+                candidate.save()
+                self.check_buying_condition(candidate)
+                # if lots > 0:
+                #     self.buy(isin, 1ots)
         return
+
+    def check_buying_condition(self, candidate):
+        lots = 0
+        if candidate.volume:
+            if candidate.rsi and candidate.macd and candidate.atr and candidate.indivCheck:
+                lots = 5
+            if candidate.rsi and candidate.macd and (candidate.atr or candidate.indivCheck):
+                lots = 2
+            if (candidate.rsi or candidate.macd) and (candidate.atr or candidate.indivCheck):
+                lots = 1
+        if lots > 0:
+            return -1
+        return 0
+
     def bid_ask_event(self, jsonObject):
-        return
+        isin = jsonObject.isin
+        if isin not in self.candidates:
+            return
+        candidates = Candidate.objects(isin=isin)
+        if len(candidates) > 0:
+            candidate = candidates[0]
 
     def orderNoticeCallBack(self, ch, method, properties, body):
         print(" [x] Order Notice Received %r" % body)
@@ -76,8 +178,9 @@ class MyStrategy(bt.Strategy):
             current_situation[body.isin] = body.amount
             currentStock = CurrentStock(isin=body.isin, maxValue=body.price, valume=body.vol)
             currentStock.save()
+            self.candidates.remove(body.isin)
             del self.current_orders[body.isin]
-        else: #body.state == 'FAILURE':
+        else:  # body.state == 'FAILURE':
             del self.current_orders[body.isin]
             self._order_failure_handler(body.isin, body.value)
 
@@ -122,10 +225,10 @@ class MyStrategy(bt.Strategy):
     def _list_stocks(self, path):
         self.files = [f for f in listdir(path) if isfile(join(path, f))]
 
-    @staticmethod
     def _trailing_stop_checker(isin, value):
-        stock = CurrentStock.objects(isin=isin)
-        if stock is not None:
+        stocks = CurrentStock.objects(isin=isin)
+        if len(stocks) > 0:
+            stock = stocks[0]
             if stock.maxValue < value:
                 stock.maxValue = value
                 stock.save()
@@ -142,15 +245,23 @@ class MyStrategy(bt.Strategy):
         order.situation = 1
         order.save()
 
-    def buy(self, isin):
+    def buy(self, isin, lots):
         budget = CurrentBudget.objects()
-        amount = budget.availableBudget * .02
+        amount = self.lot_amount * lots
         budget.availableBudget -= amount
         budget.save()
         self._create_order(req_isin=isin, budget=amount, side="BUY")
 
+    def sell(self, isin, price):
+        # budget = CurrentBudget.objects()
+        # amount = self.lot_amount * lots
+        # budget.availableBudget -= amount
+        # budget.save()
+        self._create_order(req_isin=isin, side="SELL")
+
     def _create_order(self, req_isin, budget, price, quantity, side):
-        order = Order(budget=budget, isin=req_isin, situation=0, side = side)
+        orderId = randint(100000, 999999)
+        order = Order(budget=budget, isin=req_isin, situation=0, side=side, orderId = orderId)
         order.save()
         self.current_orders[req_isin] = quantity
         self.channel.basic_publish(exchange='orderbox', routing_key='ORDER', body=json.dumps(
@@ -165,7 +276,7 @@ class MyStrategy(bt.Strategy):
                 "side": side,
                 "validity": 'DAY',
                 "tag": 'TAG_TAG',
-                "senderOrderId": 101010
+                "senderOrderId": orderId
             })
                                    )
         return order
