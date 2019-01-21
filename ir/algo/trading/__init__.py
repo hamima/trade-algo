@@ -1,16 +1,9 @@
-import datetime
-import sys
 from builtins import set
 from random import randint
 from mongoengine import *
 
 import pika
 import json
-# import backtrader as bt
-# import backtrader.indicators as btind
-# import backtrader.feeds as btfeeds
-from os import listdir
-from os.path import isfile, join
 
 from ir.algo.trading.current_situation import CurrentStock, CurrentBudget, Order, Candidate
 
@@ -20,49 +13,49 @@ rabbitHost = '185.37.53.'
 rabbitPort = 30672
 rabbitUserName = 'algo-usr-rastak'
 rabbitPassword = 'UVPP1R41X1I77MIJDPFO'
-clientId = 'rastak'
+clientId = 'LtywARien5jxwGUkgRSimFZ33uaGuQ'
 clientSecret = 'LtywARien5jxwGUkgRSimFZ33uaGuQ'
 user1Secret = 'pgun4Jn2Bgz43jd6WCeT9NRyGqa78Q'
 
 
 class MyStrategy():
-    #params = dict(period=20)
-    #current_budget = -sys.maxint - 1
+    # params = dict(period=20)
+    # current_budget = -sys.maxint - 1
     lot_amount = 3000000
-    #trackedIsins = ['', '']
+    # trackedIsins = ['', '']
     rsiIsins = {
-        "IRO1ATIR0001":{"close":4513,"maxVol":4400851,"atr":195},
-        "IRO3OSHZ0001":{"close":1367,"maxVol":3193025,"atr":55},
-        "IRO1BHMN0001":{"close":1074,"maxVol":18050543,"atr":33},
-        "IRO1SHZG0001":{"close":6354,"maxVol":1781598,"atr":300},
-        "IRO1JAMD0001":{"close":8738,"maxVol":130593,"atr":340},
-        "IRO3BMAZ0001":{"close":13500,"maxVol":420100,"atr":600},
-        "IRO1RSAP0001":{"close":1346,"maxVol":39520936,"atr":53},
-        "IRO1RINM0001":{"close":2051,"maxVol":5055583,"atr":106},
-        "IRO1LMIR0001":{"close":4316,"maxVol":3919574,"atr":168},
-        "IRO1RADI0001":{"close":2564,"maxVol":587690,"atr":80},
-        "IRO1MSTI0001":{"close":3340,"maxVol":3148506,"atr":170},
-        "IRO1KHSH0001":{"close":1860,"maxVol":3943163,"atr":65}
+        "IRO1ATIR0001": {"close": 4513, "maxVol": 4400851, "atr": 195},
+        "IRO3OSHZ0001": {"close": 1367, "maxVol": 3193025, "atr": 55},
+        "IRO1BHMN0001": {"close": 1074, "maxVol": 18050543, "atr": 33},
+        "IRO1SHZG0001": {"close": 6354, "maxVol": 1781598, "atr": 300},
+        "IRO1JAMD0001": {"close": 8738, "maxVol": 130593, "atr": 340},
+        "IRO3BMAZ0001": {"close": 13500, "maxVol": 420100, "atr": 600},
+        "IRO1RSAP0001": {"close": 1346, "maxVol": 39520936, "atr": 53},
+        "IRO1RINM0001": {"close": 2051, "maxVol": 5055583, "atr": 106},
+        "IRO1LMIR0001": {"close": 4316, "maxVol": 3919574, "atr": 168},
+        "IRO1RADI0001": {"close": 2564, "maxVol": 587690, "atr": 80},
+        "IRO1MSTI0001": {"close": 3340, "maxVol": 3148506, "atr": 170},
+        "IRO1KHSH0001": {"close": 1860, "maxVol": 3943163, "atr": 65}
     }
     crossoverIsins = {
-        "IRO1TAYD0001":{"close":4400,"maxVol":4740612,"atr":210},
-                        "IRO1SIMS0001":{"close":1288,"maxVol":1032321,"atr":52},
-                        "IRO1TBAS0001":{"close":5239,"maxVol":1133920,"atr":279},
-                        "IRO1SEFH0001":{"close":5952,"maxVol":37418,  "atr":267},
-                        "IRO1SSOF0001":{"close":2403,"maxVol":1435683,"atr":117},
-                        "IRO1SSNR0001":{"close":15181,"maxVol":76711, "atr":660},
-                        "IRO3DZLZ0001":{"close":3460,"maxVol":3606178,"atr":140},
-                        "IRO1KHOC0001":{"close":4051,"maxVol":3060212,"atr":164},
-                        "IRO1DSOB0001":{"close":2701,"maxVol":8375651,"atr":120},
-                        "IRO1RINM0001":{"close":2051,"maxVol":5055583,"atr":106},
-                        "IRO3BIPZ0001":{"close":4371,"maxVol":11026429,"atr":220},
-                        "IRO1BAHN0001":{"close":7487,"maxVol":3551976,"atr":349},
-                        "IRO1SKAZ0001":{"close":3077,"maxVol":2193869,"atr":132},
-                        "IRO1LSMD0001":{"close":1440,"maxVol":2007496,"atr":57}
+        "IRO1TAYD0001": {"close": 4400, "maxVol": 4740612, "atr": 210},
+        "IRO1SIMS0001": {"close": 1288, "maxVol": 1032321, "atr": 52},
+        "IRO1TBAS0001": {"close": 5239, "maxVol": 1133920, "atr": 279},
+        "IRO1SEFH0001": {"close": 5952, "maxVol": 37418, "atr": 267},
+        "IRO1SSOF0001": {"close": 2403, "maxVol": 1435683, "atr": 117},
+        "IRO1SSNR0001": {"close": 15181, "maxVol": 76711, "atr": 660},
+        "IRO3DZLZ0001": {"close": 3460, "maxVol": 3606178, "atr": 140},
+        "IRO1KHOC0001": {"close": 4051, "maxVol": 3060212, "atr": 164},
+        "IRO1DSOB0001": {"close": 2701, "maxVol": 8375651, "atr": 120},
+        "IRO1RINM0001": {"close": 2051, "maxVol": 5055583, "atr": 106},
+        "IRO3BIPZ0001": {"close": 4371, "maxVol": 11026429, "atr": 220},
+        "IRO1BAHN0001": {"close": 7487, "maxVol": 3551976, "atr": 349},
+        "IRO1SKAZ0001": {"close": 3077, "maxVol": 2193869, "atr": 132},
+        "IRO1LSMD0001": {"close": 1440, "maxVol": 2007496, "atr": 57}
     }
     rsiCandidateIsins = []
     macDCandidateIsins = []
-    #atrCandidateIsins = [{'isin': 'IRO1HFRS0001', 'close': 1000, 'average': 20}]
+    # atrCandidateIsins = [{'isin': 'IRO1HFRS0001', 'close': 1000, 'average': 20}]
     candidates = set()
     portfolio = []
     noTrades = 0
@@ -78,7 +71,7 @@ class MyStrategy():
             self.rsiCandidateIsins.append(isin)
             candidate = Candidate(isin=isin, rsi=True, atrAvg=v["atr"], atrClose=v["close"], volumeMax=v["maxVol"])
             candidate.save()
-        for isin,v in self.crossoverIsins.items():
+        for isin, v in self.crossoverIsins.items():
             self.macDCandidateIsins.append(isin)
             candidates = Candidate.objects(isin=isin)
             if len(candidates) > 0:
@@ -97,19 +90,19 @@ class MyStrategy():
             self.portfolio.append(stock.isin, stock)
 
     def _main_init(self):
-        self.mongo_init()
+        self._mongo_init()
         self._store_candidates()
         self.fill_portfolio()
-        self.init_budget()
+        self.budget_init()
         self._channel_init()
 
-    def init_budget(self):
+    def budget_init(self):
         budget = CurrentBudget.objects()
         if len(budget) == 0:
             budget = CurrentBudget(availableBudget=10000000)
             budget.save()
 
-    def mongo_init(self):
+    def _mongo_init(self):
         connect("trading_db")
 
     def _channel_init(self):
@@ -145,7 +138,7 @@ class MyStrategy():
             if isin not in self.portfolio:
                 return
         if isin in self.candidates:
-            print(" [x] Market Data of candidate Received %r" % jsonObject)
+            print(" [x] Market Data (StockWatch) of candidate Received %r" % jsonObject)
             candidates = Candidate.objects(isin=isin)
             if len(candidates) > 0:
                 candidate = candidates[0]
@@ -153,15 +146,15 @@ class MyStrategy():
                 if jsonObject.tradeVolume >= (candidate.volumeMax * 1.2):
                     candidate.volume = True
                     candidate.save()
-                    self.check_buying_condition(candidate)
+                    self._check_buying_condition(candidate)
                 # check ATR
                 if max(jsonObject.high - candidate.atrClose,
                        jsonObject.high - jsonObject.low) >= 1.5 * candidate.atrAvg:
                     candidate.atr = True
                     candidate.save()
-                    self.check_buying_condition(candidate)
+                    self._check_buying_condition(candidate)
         if isin in self.portfolio:
-            print(" [x] Market Data of portfolio Received %r" % jsonObject)
+            print(" [x] Market Data (StockWatch) of portfolio Received %r" % jsonObject)
             stocks = CurrentStock.objects(isin=isin)
             if len(stocks) > 0:
                 stock = stocks[0]
@@ -184,6 +177,7 @@ class MyStrategy():
         isin = jsonObject.isin
         if isin not in self.candidates:
             return
+        print(" [x] Market Data (ClientInfo) of candidate Received %r" % jsonObject)
         individualSellerCount = jsonObject.individualSellCount
         individualBuyerCount = jsonObject.individualBuyCount
         individualBuyVolume = jsonObject.individualBuyVolume
@@ -193,9 +187,9 @@ class MyStrategy():
                 candidate = candidates[0]
                 candidate.indivCheck = True
                 candidate.save()
-                self.check_buying_condition(candidate)
+                self._check_buying_condition(candidate)
 
-    def check_buying_condition(self, candidate):
+    def _check_buying_condition(self, candidate):
         if self.isForbidden:
             return
         lots = 0
@@ -210,7 +204,7 @@ class MyStrategy():
             price = candidate.buyPrice + 1
             quantity = lots * self.lot_amount / price
             print('Buy ISIN %s for Quantity %s and Price %s' % (candidate.isin, quantity, price))
-            self._create_order(req_isin=candidate.isin, price=price, side="SELL", quantity=quantity)
+            self._create_order(req_isin=candidate.isin, price=price, side="BUY", quantity=quantity)
             budgets = CurrentBudget.objects()
             if len(budgets):
                 budget = budgets[0]
@@ -220,6 +214,7 @@ class MyStrategy():
     def bid_ask_event(self, jsonObject):
         isin = jsonObject.isin
         if isin in self.candidates:
+            print(" [x] Market Data (BidAsk) of candidate Received %r" % jsonObject)
             items = jsonObject.items
             candidates = Candidate.objects(isin=isin)
             if len(candidates) > 0:
@@ -228,6 +223,7 @@ class MyStrategy():
                 candidate.save()
 
         if isin in self.portfolio:
+            print(" [x] Market Data (BidAsk) of portfolio Received %r" % jsonObject)
             items = jsonObject.items
             stocks = CurrentStock.objects(isin=isin)
             if len(stocks) > 0:
@@ -240,10 +236,10 @@ class MyStrategy():
         body = json.loads(json)
         if body.state == 'EXECUTED':
             self.noTrades += 1
+            self.candidates.remove(body.isin)
             if body.side == 'BUY':
                 currentStock = CurrentStock(isin=body.isin, maxValue=body.price, valume=body.vol)
                 currentStock.save()
-                self.candidates.remove(body.isin)
             else:
                 CurrentStock.delete(isin=body.isin)
             if self.noTrades > 3:
@@ -277,12 +273,12 @@ class MyStrategy():
         budget.save()
         Order.delete(isin=isin)
 
-    def buy(self, isin, lots):
-        budget = CurrentBudget.objects()
-        amount = self.lot_amount * lots
-        budget.availableBudget -= amount
-        budget.save()
-        self._create_order(req_isin=isin, budget=amount, side="BUY")
+    # def buy(self, isin, lots):
+    #     budget = CurrentBudget.objects()
+    #     amount = self.lot_amount * lots
+    #     budget.availableBudget -= amount
+    #     budget.save()
+    #     self._create_order(req_isin=isin, budget=amount, side="BUY")
 
     def _create_order(self, req_isin, price, quantity, side):
         orderId = randint(100000, 999999)
@@ -305,6 +301,7 @@ class MyStrategy():
             })
                                    )
         return order
+
 
 strategy = MyStrategy()
 
